@@ -117,3 +117,4 @@ footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--mut);fon
 #coachIn{display:flex;gap:6px}#coachIn input{flex:1;background:#0b1120;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 10px;font:inherit;font-size:14px}
 .modal{position:fixed;inset:0;z-index:80;background:rgba(5,7,12,.8);display:none;align-items:center;justify-content:center;padding:20px}.modal.on{display:flex}
 .modal .card{max-width:440px}
+@media (max-width:760px){#builder{grid-template-columns:1fr!important}#map{height:58vh}#vehGrid{grid-template-columns:1fr!important}}
