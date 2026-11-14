@@ -114,14 +114,14 @@ function project(lat,lng){const k=111320*Math.cos(lat*Math.PI/180);let best={d:1
   if(d<best.d)best={d,s:cum[i]+t*Math.sqrt(L2),b:Math.atan2(dx,dy)*180/Math.PI};}return best;}
 async function detect(){if(routePts.length<2)return st('Trace d\'abord ton parcours (au moins 2 points).');
  if(cum[cum.length-1]>10000)return st('Parcours trop long : 10 km maximum.');
- st('Analyse des rues avec OpenStreetMap…');$('#detect').disabled=true;
+ st('Analyse des rues avec OpenStreetMap… (10 à 30 secondes)');$('#detect').disabled=true;
  const la=routePts.map(p=>p[0]),lo=routePts.map(p=>p[1]);const pad=.0008;const bb=[Math.min(...la)-pad,Math.min(...lo)-pad,Math.max(...la)+pad,Math.max(...lo)+pad].join(',');
  const qy=`[out:json][timeout:60];(way["highway"~"^(trunk|primary|secondary|tertiary|unclassified|residential|living_street|primary_link|secondary_link|tertiary_link)$"](${bb});)->.w;(.w;>;);out body;`;
  try{const r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(qy),headers:{'Content-Type':'application/x-www-form-urlencoded'}}).then(r=>r.json());
   const N={},W=[];r.elements.forEach(e=>{if(e.type==='node')N[e.id]=e;else W.push(e);});
   const wof={};W.forEach((w,wi)=>w.nodes.forEach(n=>{(wof[n]=wof[n]||new Set()).add(wi);}));
   const ctrl=new Set(['traffic_signals','stop','give_way','mini_roundabout']);const out=[];
-  const near=(n,R)=>{const a=N[n];return Object.values(N).some(b=>b.tags&&ctrl.has(b.tags.highway)&&Math.hypot((a.lat-b.lat)*110540,(a.lon-b.lon)*111320*Math.cos(a.lat*Math.PI/180))<R&&[...(wof[b.id]||[])].some(x=>wof[n].has(x)));};
+  const CN=Object.values(N).filter(b=>b.tags&&ctrl.has(b.tags.highway));const near=(n,R)=>{const a=N[n];return CN.some(b=>Math.hypot((a.lat-b.lat)*110540,(a.lon-b.lon)*111320*Math.cos(a.lat*Math.PI/180))<R&&[...(wof[b.id]||[])].some(x=>wof[n].has(x)));};
   const rbSeen=new Set();
   Object.values(N).forEach(n=>{if(!wof[n.id])return;const pr=project(n.lat,n.lon);const ws=[...wof[n.id]].map(i=>W[i]);const nm=[...new Set(ws.map(w=>w.tags&&w.tags.name).filter(Boolean))].slice(0,2).join(' / ');
    const h=n.tags&&n.tags.highway;
@@ -133,7 +133,7 @@ async function detect(){if(routePts.length<2)return st('Trace d\'abord ton parco
    const rb=ws.find(w=>w.tags&&/roundabout|circular/.test(w.tags.junction||''));
    if(rb){if(pr.d<10&&!rbSeen.has(rb.id)){rbSeen.add(rb.id);out.push({s:pr.s,t:'rp',nm});}return;}
    if(ws.length>=2&&pr.d<6&&!near(n.id,35))out.push({s:pr.s,t:'pad',nm});});
-  out.sort((a,b)=>a.s-b.s);evs=[];out.forEach(e=>{if(!evs.some(x=>x.t===e.t&&Math.abs(x.s-e.s)<15))evs.push(e);});
+  out.sort((a,b)=>a.s-b.s);evs=[];out.forEach(e=>{if(!evs.some(x=>x.t===e.t&&Math.abs(x.s-e.s)<(e.t==='rp'?80:15)))evs.push(e);});
   // un rond-point : garder l'entrée (premier point)
   renderEvs();st(evs.length+' pièges détectés. Vérifie la liste et complète si besoin.');
  }catch(e){st('Analyse impossible pour le moment, réessaie dans un instant.');}
